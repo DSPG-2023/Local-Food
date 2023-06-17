@@ -1,8 +1,9 @@
 
-Spider Note log
+Spider Note:
 
-Both Russ market and New Pioneer have similar website structers 
+Hyvee spider Needs store locations
 
-If you can find elements that are rendered using javascript (pseudo-element) then it should be very straight forward for building a spider for each
+Needing master list of store brands for cleaning
 
-
+Started on code reduction with Composition because
+Composition > inheritance 
