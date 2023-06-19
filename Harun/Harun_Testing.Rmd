@@ -1,0 +1,34 @@
+---
+title: "Local Foods Harun"
+author: "Harun Celik"
+date: "2023-06-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+FipsCode <- formatC(sample(001:197, 40, replace = TRUE), width = 3, flag = 0)
+StoreID <- sample(1:40, 40, replace = TRUE)
+Commodity <- "heirloom tomatoes"
+Price <- round(runif(40, 2.99, 5.99), 2)
+Locality <- sample(c("Local", "NonLocal"), 40, replace = TRUE) 
+```
+
+
+```{r}
+test_data <- data.frame(StoreID = StoreID, 
+                        Commodity = Commodity, 
+                        Price = Price, 
+                        Locality = Locality, 
+                        FipsCode = FipsCode)
+```
+
+```{r, eval=FALSE}
+## To save the test data, uncomment the code below and run.
+
+# write.csv(test_data, file = "LocFoodsTestData.csv")
+```
+
