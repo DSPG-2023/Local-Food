@@ -8,6 +8,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from datetime import datetime
 from os import path
 import time
 
@@ -43,17 +44,29 @@ class SeleniumSpider():
         with open(filename, 'w') as file:
             for log_entry in self.spiderLogs:
                 file.write('{} {}\n'.format(log_entry[0], log_entry[1]))
-
+    
     def __init__(self):
-        #Note these are all the default values and should be set in the inherited spider class
-        self.DEBUGGER = False #The debugger switch to see whats going on. 
-        self.LOGGER = False #When you need to see everything that happends. 
-        self.attempts = 3 #The number of attempts the spider can retry if an error occurs.
-        self.waitTime = 10 #The number of seconds WebDriver will wait. 
-        self.count = 0 #This saves the location of the url we are going through
-        self.runTime = 0 #Total time of extractions
-        self.totalRecoveries = 0 #Number of recoveries made while running
-        self.maxRetryCount = 100 #Number of retrys the javascript can make 
+        # If you need to change anything add it to the spider's __init__ and it will overwrite these
+        # Note these are all the default values and should be set in the inherited spider class
+        # DON'T CHANGE THESE 3 IT MIGHT BREAK
+        self.count = 0              #This saves the location of the url we are going through
+        self.runTime = 0            #Total time of extractions
+        self.totalRecoveries = 0    #Number of recoveries made while running
+        
+        # Debuging/Testing
+        self.retry = True           #This is when it run's into an error and you want it to retry running from where it left off.
+        self.DEBUGGER = False       #The debugger switch to see whats going on. 
+        self.LOGGER = False         #When you need to see everything that happends. 
+        
+        # Values that will increase run time
+        # WARNING: High number longer time but less chance of a skip or fails when extraction 
+        self.attempts = 3           #The number of attempts the spider can retry if an error occurs.    Recommended range 2 - 50
+        self.waitTime = 10          #The number of seconds WebDriver will wait for the page to load.    Recommended range 5 - 30
+        self.maxRetryCount = 50     #Number of retrys the javascript can make.                          Recommended range 10 - 100
+        
+        #Formating the dates recoreded
+        self.currentDate = str(datetime(datetime.today().year, datetime.today().month, datetime.today().day))[:-8]
+        
         #Selenium needs a webdriver to work. I chose Firefox however you can do another if you need too
         self.driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install(), log_path=path.devnull))
         self.log("Driver started")
@@ -64,31 +77,59 @@ class SeleniumSpider():
         self.driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install(), log_path=path.devnull))
         self.log("Driver restarted")
 
+    #This is for testing the code without it trying to recover
+    def testingRequestExtraction(self, product):
+        self.count = 0
+        errors = 0
+        start = time.time()
+        self.debug("Starting "+ product[1]) 
+        self.handleRequests(product)
+        self.debug(product[1] + " Finished")    
+        self.log('\n< --- ' + product[1] + ' scrape took %s seconds with %d recoveries --- >\n' % ((time.time() - start), errors))
+        return 0
+
     #This handles the extraction request for the inputed product 
     #Note: It wont be any differet unless we are taking in different store. 
     def requestExtraction(self, product):
         self.count = 0
         errors = 0
         start = time.time()
-        self.debug("Starting "+ product[1])    
-        for trying in range(self.attempts):
-            try:
-                self.handleRequests(product)
-                self.debug(product[1] + " Finished")    
-                self.log('\n< --- ' + product[1] + ' scrape took %s seconds with %d recoveries --- >\n' % ((time.time() - start), errors))
-                return errors
-            except Exception as e:
-                #Note sometimes the browser will closed unexpectedly and theres not we can do but restart the driver
-                errors += 1
-                self.debug("An error occurred:", e)
-                self.debug("Recovering extraction and continueing")
-                self.restart() 
-        self.debug(product[1] + " Did not Finished after " + str(self.attempts) + " Time wasted: %s seconds" % (time.time() - start))
-        return errors
+        self.debug("Starting "+ product[1])  
+        if self.retry:  
+            for trying in range(self.attempts):
+                try:
+                    self.handleRequests(product)
+                    self.debug(product[1] + " Finished")    
+                    self.log('\n< --- ' + product[1] + ' scrape took %s seconds with %d recoveries --- >\n' % ((time.time() - start), errors))
+                    return errors
+                except Exception as e:
+                    #Note sometimes the browser will closed unexpectedly and theres not we can do but restart the driver
+                    errors += 1
+                    self.debug("An error occurred:", e)
+                    self.debug("Recovering extraction and continueing")
+                    self.restart() 
+            self.debug(product[1] + " Did not Finished after " + str(self.attempts) + " Time wasted: %s seconds" % (time.time() - start))
+            return errors
+        self.handleRequests(product)
+        self.debug(product[1] + " Finished")    
+        self.log('\n< --- ' + product[1] + ' scrape took %s seconds --- >\n' % (time.time() - start))
+        return 0
 
     #This is to be build upon in the spider and is the only required function to be passed into and handled by the inherited spider
     def handleRequests(self):
         pass
+
+    #Sometimes a URL must be set
+    def setThisUrl(self, url):
+        self.driver.get(url)
+        return
+
+    #Sometimes a button must be pushed
+    def clickThis(self, xpath):
+        ignored_exceptions=(NoSuchElementException,StaleElementReferenceException)
+        elements = WebDriverWait(self.driver, self.waitTime, ignored_exceptions=ignored_exceptions).until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
+        elements[0].click()
+        return
 
     #This returns data from the request 
     def makeRequest(self, xpath, url):
@@ -130,7 +171,7 @@ class SeleniumSpider():
             # We want to keep repeating if we get any of these outputs becasue the page is still 
             # loading and we dont want to skip or waste time. (for fast computers)
             retrycount = 0
-            invalidOutputs = {'error', 'skip' '$nan', 'nan', ''}
+            invalidOutputs = {'error', 'skip' '$nan', 'nan', 'notfound', ''}
             while retrycount < self.maxRetryCount :
                 text = self.driver.execute_script("""
                     const element = document.evaluate(arguments[0], document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
@@ -140,6 +181,9 @@ class SeleniumSpider():
                     return element.textContent.trim();
                 """, 
                 xpath)
+                if text == None:
+                    retrycount+=1
+                    continue
                 checkText = text.replace(" ", "").lower()
                 if checkText in invalidOutputs:
                     retrycount+=1
@@ -151,3 +195,4 @@ class SeleniumSpider():
         except TimeoutException:
             self.log('Could not find xpath for: ', xpath)
             return 'empty'
+
