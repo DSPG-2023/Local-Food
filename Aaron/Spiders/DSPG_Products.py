@@ -24,7 +24,7 @@ class Products():
     def dataFrameAdder(self):
         #Dataframes (You can add more here)
         self.ProductDataFrames = [pd.DataFrame(columns=['Bacon', 'Current Price', 'Orignal Price', 'Weight in lbs', 'True Weight', 'Brand', 'Local', 'Address', 'State', 'City', 'Zip Code', 'Date Collected', 'Url']), #Bacon Frame
-                                  pd.DataFrame(columns=['Egg', 'Current Price', 'Orignal Price', 'Amount in dz', 'True Amount', 'Brand', 'Local', 'Address', 'State', 'City', 'Zip Code', 'Date Collected', 'Url']), #Egg Frame
+                                  pd.DataFrame(columns=['Eggs', 'Current Price', 'Orignal Price', 'Amount in dz', 'True Amount', 'Brand', 'Local', 'Address', 'State', 'City', 'Zip Code', 'Date Collected', 'Url']), #Egg Frame
                                   pd.DataFrame(columns=['Heirloom Tomatoes', 'Current Price', 'Orignal Price', 'Weight in lbs', 'True Weight', 'Brand', 'Organic', 'Local', 'Address', 'State', 'City', 'Zip Code', 'Date Collected', 'Url']) #Heirloom Tomato Frame
                                  ]
     
