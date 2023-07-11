@@ -14,12 +14,12 @@ nc = len(data.index)
 couple = [(i,j) for i in range(nc) for j in range(nc)]
 single = [i for i in range(nc)]
 
-xc = {i:data['Lattitude'][i] for i in range(0,nc)}
-yc = {i:data['Longitude'][i] for i in range(0,nc)}
+yc = {i:data['Lattitude'][i] for i in range(0,nc)}
+xc = {i:data['Longitude'][i] for i in range(0,nc)}
 
 for i in range(0,nc):
     plt.scatter(float(xc[i]),float(yc[i]),c='r',marker='o')
-    plt.annotate(i, (float(xc[i]),float(yc[i])))
+    plt.annotate(data['County Name'][i], (float(xc[i]),float(yc[i])))
 plt.show()
 
 couple = [(i,j) for i in range(nc) for j in range(nc)]
@@ -71,9 +71,17 @@ plt.show()
 ##
 
 result = np.zeros([nc,nc])
+power_bi_data = pd.DataFrame(columns=['From', 'To', 'Count', 'From Lat', 'From Long', 'To Lat', 'To Long'])
+
 for (i,j) in x.keys():
     result[i,j] = np.around(x[(i,j)].x,2)
+    if (result[i,j]!=0) and (i !=j) :
+        new_row = {'From': data['County Name'][i] , 'To': data['County Name'][j], 'Count': result[i,j],
+                   'From Lat': data['Lattitude'][i], 'From Long': data['Longitude'][i],
+                   'To Lat': data['Lattitude'][j], 'To Long': data['Longitude'][j]}
+        power_bi_data = power_bi_data._append(new_row, ignore_index=True)
 
-import pandas as pd
 results = pd.DataFrame(result)
 results.to_csv("results.csv")
+
+power_bi_data.to_csv("power_bi_data.csv", index=False)
