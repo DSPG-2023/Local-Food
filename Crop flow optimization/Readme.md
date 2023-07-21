@@ -7,7 +7,7 @@ In this section, our focus is on analyzing crop distribution strategies for loca
 
 We have selected tomatoes to illustrate our approach. Our approach involves:
 
-1.	Estimation of the demand and supply for tomatoes across Iowa.
+1. Estimation of the demand and supply for tomatoes across Iowa.
 
 The estimation we got is in “Supply_Demand_Estimation > S_D_Estimated.xlsx”.
 
